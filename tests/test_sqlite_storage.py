@@ -270,3 +270,28 @@ class TestSQLiteStorageProvider:
         retrieved = asyncio.run(self.storage.get_response(question2))
         assert retrieved is not None
         assert retrieved.full_response["test"] == "hash_consistency"
+
+
+def test_question_hash_is_order_independent():
+    """Questions with identical data but different insertion orders should hash the same."""
+    word_set_in_order = {"org": "TestOrg", "country": "TestCountry"}
+    word_set_reversed = dict([("country", "TestCountry"), ("org", "TestOrg")])
+
+    question_a = Question(
+        word_set=word_set_in_order,
+        template="Test {org} in {country}",
+        response_model=MockResponseModel,
+    )
+    question_b = Question(
+        word_set=word_set_reversed,
+        template="Test {org} in {country}",
+        response_model=MockResponseModel,
+    )
+
+    # Ensure the insertion order differs while the content matches
+    assert tuple(question_a.word_set.keys()) == ("org", "country")
+    assert tuple(question_b.word_set.keys()) == ("country", "org")
+    assert question_a.word_set == question_b.word_set
+
+    # Hashes should be identical regardless of insertion order
+    assert hash(question_a) == hash(question_b)

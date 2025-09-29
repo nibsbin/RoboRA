@@ -28,7 +28,7 @@ class Question:
         return f"Question(template={self.template}, word_set={self.word_set})"
     
     def __hash__(self) -> int:
-        return hash((self.template, frozenset(self.word_set.items())))
+        return hash((self.template, frozenset(sorted(self.word_set.items()))))
 
     
 @final
