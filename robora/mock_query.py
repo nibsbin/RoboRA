@@ -66,6 +66,40 @@ class MockQueryHandler(QueryHandler):
         
         return QueryResponse(full_response=mock_full_response, error=None)
     
+    def _format_pretty_citations(self, enriched_citations: list) -> str:
+        """Format enriched citations into a human-readable string."""
+        if not enriched_citations:
+            return "No citations available."
+        
+        formatted_parts = []
+        for i, citation in enumerate(enriched_citations, 1):
+            parts = [f"[{i}]"]
+            
+            # Add title if available
+            if citation.get('title'):
+                parts.append(citation['title'])
+            
+            # Add URL
+            parts.append(f"({citation['url']})")
+            
+            # Add date information if available
+            if citation.get('date'):
+                parts.append(f"- Published: {citation['date']}")
+            elif citation.get('last_updated'):
+                parts.append(f"- Updated: {citation['last_updated']}")
+            
+            # Add snippet if available
+            if citation.get('snippet'):
+                snippet = citation['snippet']
+                # Truncate snippet if too long
+                if len(snippet) > 150:
+                    snippet = snippet[:147] + "..."
+                parts.append(f"\n    {snippet}")
+            
+            formatted_parts.append(" ".join(parts))
+        
+        return "\n\n".join(formatted_parts)
+    
     def extract_fields(self, full_response: Dict[str, Any]) -> Dict[str, Any]:
         """Extract and enrich fields from the mock response, similar to SonarQueryHandler."""
         
@@ -115,7 +149,11 @@ class MockQueryHandler(QueryHandler):
                 })
             enriched_citations.append(enriched_citation)
         
+        # Format pretty citations
+        pretty_citations = self._format_pretty_citations(enriched_citations)
+        
         content_dict['enriched_citations'] = enriched_citations
+        content_dict['pretty_citations'] = pretty_citations
         return content_dict
     
     def __repr__(self) -> str:

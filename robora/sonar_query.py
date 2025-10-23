@@ -18,6 +18,40 @@ class SonarQueryHandler(QueryHandler):
         self.model = model
         self.max_retries = max_retries
     
+    def _format_pretty_citations(self, enriched_citations: List[Dict[str, Any]]) -> str:
+        """Format enriched citations into a human-readable string."""
+        if not enriched_citations:
+            return "No citations available."
+        
+        formatted_parts = []
+        for i, citation in enumerate(enriched_citations, 1):
+            parts = [f"[{i}]"]
+            
+            # Add title if available
+            if citation.get('title'):
+                parts.append(citation['title'])
+            
+            # Add URL
+            parts.append(f"({citation['url']})")
+            
+            # Add date information if available
+            if citation.get('date'):
+                parts.append(f"- Published: {citation['date']}")
+            elif citation.get('last_updated'):
+                parts.append(f"- Updated: {citation['last_updated']}")
+            
+            # Add snippet if available
+            if citation.get('snippet'):
+                snippet = citation['snippet']
+                # Truncate snippet if too long
+                if len(snippet) > 150:
+                    snippet = snippet[:147] + "..."
+                parts.append(f"\n    {snippet}")
+            
+            formatted_parts.append(" ".join(parts))
+        
+        return "\n\n".join(formatted_parts)
+    
     async def query(self, prompt:str) -> QueryResponse:
         schema = self.response_model.model_json_schema()
         enhanced_prompt = f"""{prompt}\n\nAnswer schema:\n{json.dumps(schema, indent=2)}"""
@@ -87,9 +121,13 @@ class SonarQueryHandler(QueryHandler):
                 })
             enriched_citations.append(enriched_citation)
 
+        # Format pretty citations
+        pretty_citations = self._format_pretty_citations(enriched_citations)
+
         # 
         content_dict = content.model_dump()
         content_dict['enriched_citations'] = enriched_citations
+        content_dict['pretty_citations'] = pretty_citations
         return content_dict
         
     def __repr__(self) -> str:
