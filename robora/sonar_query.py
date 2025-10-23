@@ -20,9 +20,9 @@ class SonarQueryHandler(QueryHandler):
     
     async def query(self, prompt:str) -> QueryResponse:
         schema = self.response_model.model_json_schema()
-        enhanced_prompt = f"""{prompt}\n\nPlease provide comprehensive information and format your response according to the specified JSON schema structure. Pay attention to the field descriptions in the schema to understand what information is expected for each field.\n\nJSON Schema:\n{json.dumps(schema, indent=2)}"""
+        enhanced_prompt = f"""{prompt}\n\nAnswer schema:\n{json.dumps(schema, indent=2)}"""
         try:
-            async with httpx.AsyncClient(timeout=60.0) as client:
+            async with httpx.AsyncClient(timeout=90.0) as client:
                 response = await client.post(
                     "https://api.perplexity.ai/chat/completions",
                     headers={

@@ -1,12 +1,11 @@
 
 from abc import ABC, abstractmethod
 from typing import Type, Optional, Dict, Any
-from pydantic import BaseModel
-import pandas as pd
 from itertools import product
 import math
 from typing import Dict, List, Any, Optional, Type, Union, Tuple, final, AsyncIterable, cast
 import json
+import hashlib
 from pydantic import BaseModel, ValidationError
 import pandas as pd
 
@@ -28,7 +27,16 @@ class Question:
         return f"Question(template={self.template}, word_set={self.word_set})"
     
     def __hash__(self) -> int:
-        return hash((self.template, frozenset(sorted(self.word_set.items()))))
+        payload = json.dumps(
+            {
+                "template": self.template,
+                "word_set": self.word_set,
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        digest = hashlib.blake2b(payload, digest_size=8).digest()
+        return int.from_bytes(digest, byteorder="big", signed=False)
 
     
 @final
